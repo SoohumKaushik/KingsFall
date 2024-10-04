@@ -1,23 +1,34 @@
 import pygame
 import sys
-from chessboard import run_chessboard  # Import from the same directory
-from rules import run_rules  # Import from the same directory
+from chessboard import run_chessboard
 
 # Initialize Pygame
 pygame.init()
 
-# Load the background image (replace with your actual image path)
-background_image = pygame.image.load("C:/Users/soohu/OneDrive/Desktop/kingsfall.webp")
+# Load the background image for the main menu (relative path to the image folder)
+background_image = pygame.image.load("images/kingsfall.webp")
 
-# Get the original width and height of the image
-image_width = background_image.get_width()
-image_height = background_image.get_height()
+# Set up colors for the play mode screen
+RED_THEME_COLOR = (150, 0, 0)
+HOVER_COLOR = (200, 0, 0)
+DEFAULT_COLOR = (255, 0, 0)
+TEXT_COLOR = (255, 255, 255)
 
-# Set the display mode to include borders and allow resizing, with a minimized start
-screen = pygame.display.set_mode((800, 600), pygame.RESIZABLE)  # Start minimized
+# Screen setup
+SCREEN_WIDTH = 800
+SCREEN_HEIGHT = 600
+screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT), pygame.RESIZABLE)
 pygame.display.set_caption("King's Fall")
 
-# Function to maintain aspect ratio
+# Font setup
+font = pygame.font.Font(None, 36)
+
+# Button setup
+button_width, button_height = 200, 50
+play_ai_button_rect = pygame.Rect((SCREEN_WIDTH - button_width) // 2, SCREEN_HEIGHT // 3, button_width, button_height)
+play_player_button_rect = pygame.Rect((SCREEN_WIDTH - button_width) // 2, SCREEN_HEIGHT // 3 + 100, button_width, button_height)
+
+# Function to maintain aspect ratio for main menu image
 def maintain_aspect_ratio(window_width, window_height, image_width, image_height):
     aspect_ratio = image_width / image_height
     if window_width / window_height > aspect_ratio:
@@ -28,62 +39,84 @@ def maintain_aspect_ratio(window_width, window_height, image_width, image_height
         new_height = int(window_width / aspect_ratio)
     return new_width, new_height
 
-# Function to constrain the window size to the image size when maximizing
-def limit_maximized_size(window_width, window_height):
-    if window_width > image_width:
-        window_width = image_width
-    if window_height > image_height:
-        window_height = image_height
-    return window_width, window_height
+# Main Menu Loop
+def main_menu_screen():
+    image_width, image_height = background_image.get_width(), background_image.get_height()
+    running = True
+    while running:
+        screen.fill((0, 0, 0))  # Black background
+        window_width, window_height = screen.get_size()
+        new_width, new_height = maintain_aspect_ratio(window_width, window_height, image_width, image_height)
+        scaled_background = pygame.transform.scale(background_image, (new_width, new_height))
+        screen.blit(scaled_background, (0, 0))
 
-# Initial scaling of the background image
-new_width, new_height = maintain_aspect_ratio(image_width, image_height, image_width, image_height)
-scaled_background = pygame.transform.scale(background_image, (new_width, new_height))
+        # Event Handling
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                sys.exit()
+            if event.type == pygame.MOUSEBUTTONDOWN:
+                # Simulating a Play Button click to go to the Play Mode screen
+                if event.button == 1:
+                    play_mode_screen()
 
-# Define the exact button positions and sizes to perfectly overlap the Play and Rules buttons
-play_button_rect = pygame.Rect(290, 440, 380, 100)  # Adjust to perfectly overlap the Play button
-rules_button_rect = pygame.Rect(290, 560, 380, 100)  # Adjust to perfectly overlap the Rules button
+        pygame.display.flip()
+
+# Function to draw buttons on play mode screen
+def draw_buttons():
+    pygame.draw.rect(screen, DEFAULT_COLOR, play_ai_button_rect, 2)
+    pygame.draw.rect(screen, DEFAULT_COLOR, play_player_button_rect, 2)
+
+    # Render text
+    ai_text = font.render("Play Against AI", True, TEXT_COLOR)
+    player_text = font.render("Play Against Player", True, TEXT_COLOR)
+
+    # Blit text to screen
+    screen.blit(ai_text, (play_ai_button_rect.x + (button_width - ai_text.get_width()) // 2, play_ai_button_rect.y + (button_height - ai_text.get_height()) // 2))
+    screen.blit(player_text, (play_player_button_rect.x + (button_width - player_text.get_width()) // 2, play_player_button_rect.y + (button_height - player_text.get_height()) // 2))
+
+# Play Mode Screen Loop
+def play_mode_screen():
+    running = True
+    while running:
+        screen.fill(RED_THEME_COLOR)  # Fill with red theme color
+        mouse_pos = pygame.mouse.get_pos()
+
+        # Button hover effect
+        if play_ai_button_rect.collidepoint(mouse_pos):
+            pygame.draw.rect(screen, HOVER_COLOR, play_ai_button_rect, 2)
+        else:
+            pygame.draw.rect(screen, DEFAULT_COLOR, play_ai_button_rect, 2)
+
+        if play_player_button_rect.collidepoint(mouse_pos):
+            pygame.draw.rect(screen, HOVER_COLOR, play_player_button_rect, 2)
+        else:
+            pygame.draw.rect(screen, DEFAULT_COLOR, play_player_button_rect, 2)
+
+        draw_buttons()
+
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                sys.exit()
+
+            if event.type == pygame.MOUSEBUTTONDOWN:
+                # Check if buttons are clicked
+                if play_ai_button_rect.collidepoint(mouse_pos):
+                    print("Play against AI clicked!")
+                    run_chessboard(ai=True)  # Start chessboard with AI opponent
+                    running = False
+
+                elif play_player_button_rect.collidepoint(mouse_pos):
+                    print("Play against Player clicked!")
+                    run_chessboard(ai=False)  # Start chessboard without AI
+                    running = False
+
+        pygame.display.flip()
 
 # Main loop
-running = True
-while running:
-    for event in pygame.event.get():
-        if event.type == pygame.QUIT:
-            running = False
+def main():
+    main_menu_screen()
 
-        # Check for mouse click on buttons
-        if event.type == pygame.MOUSEBUTTONDOWN:
-            mouse_pos = pygame.mouse.get_pos()
-
-            # Check if the Play button is clicked
-            if play_button_rect.collidepoint(mouse_pos):
-                print("Play button clicked!")
-                run_chessboard()  # Call the chessboard screen
-
-            # Check if the Rules button is clicked
-            if rules_button_rect.collidepoint(mouse_pos):
-                print("Rules button clicked!")
-                run_rules()  # Call the rules screen
-
-        # Detect if the window has been resized or maximized
-        if event.type == pygame.VIDEORESIZE:
-            window_width, window_height = event.w, event.h
-
-            # Limit the window size to the image size when maximized
-            window_width, window_height = limit_maximized_size(window_width, window_height)
-
-            # Maintain aspect ratio during resizing
-            new_width, new_height = maintain_aspect_ratio(window_width, window_height, image_width, image_height)
-            screen = pygame.display.set_mode((window_width, window_height), pygame.RESIZABLE)
-
-            # Scale the background image while maintaining aspect ratio
-            scaled_background = pygame.transform.scale(background_image, (new_width, new_height))
-
-    # Draw the scaled background image
-    screen.fill((0, 0, 0))  # Fill the screen with black (for padding)
-    screen.blit(scaled_background, (0, 0))
-
-    pygame.display.flip()
-
-pygame.quit()
-sys.exit()
+if __name__ == "__main__":
+    main()

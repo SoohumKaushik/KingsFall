@@ -1,116 +1,74 @@
 import pygame
 import sys
 from chessboard import run_chessboard
+from rules import run_rules
 
-# Initialize Pygame
 pygame.init()
 
-# Load the background image for the main menu (relative path to the image folder)
-background_image = pygame.image.load("images/kingsfall.webp")
+# Load background images
+background_main = pygame.image.load("images/loading_page.png")
+background_play_against = pygame.image.load("images/play_against.png")
 
-# Set up colors for the play mode screen
-RED_THEME_COLOR = (150, 0, 0)
-HOVER_COLOR = (200, 0, 0)
-DEFAULT_COLOR = (255, 0, 0)
-TEXT_COLOR = (255, 255, 255)
+# Screen dimensions for each screen
+MAIN_MENU_WIDTH, MAIN_MENU_HEIGHT = 700, 695
+PLAY_AGAINST_WIDTH, PLAY_AGAINST_HEIGHT = 700, 700
 
-# Screen setup
-SCREEN_WIDTH = 800
-SCREEN_HEIGHT = 600
-screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT), pygame.RESIZABLE)
-pygame.display.set_caption("King's Fall")
+# Set up the screen
+screen = pygame.display.set_mode((MAIN_MENU_WIDTH, MAIN_MENU_HEIGHT))
 
-# Font setup
-font = pygame.font.Font(None, 36)
+# Define button positions and sizes based on your adjustments
+play_button_rect = pygame.Rect(250, 406, 220, 76)  # Play button on main menu
+rules_button_rect = pygame.Rect(250, 500, 220, 76)  # Rules button on main menu
 
-# Button setup
-button_width, button_height = 200, 50
-play_ai_button_rect = pygame.Rect((SCREEN_WIDTH - button_width) // 2, SCREEN_HEIGHT // 3, button_width, button_height)
-play_player_button_rect = pygame.Rect((SCREEN_WIDTH - button_width) // 2, SCREEN_HEIGHT // 3 + 100, button_width, button_height)
+play_ai_button_rect = pygame.Rect(100, 220, 200, 350)  # Play against AI button in play_against
+play_player_button_rect = pygame.Rect(420, 220, 200, 350)  # Play against Player button in play_against
 
-# Function to maintain aspect ratio for main menu image
-def maintain_aspect_ratio(window_width, window_height, image_width, image_height):
-    aspect_ratio = image_width / image_height
-    if window_width / window_height > aspect_ratio:
-        new_width = int(window_height * aspect_ratio)
-        new_height = window_height
-    else:
-        new_width = window_width
-        new_height = int(window_width / aspect_ratio)
-    return new_width, new_height
+# Define the back button for the play_against screen
+back_button_rect_play_against = pygame.Rect(555, 620, 160, 90)  # Position and size for the Back button on play_against screen
 
 # Main Menu Loop
 def main_menu_screen():
-    image_width, image_height = background_image.get_width(), background_image.get_height()
+    global screen
+    screen = pygame.display.set_mode((MAIN_MENU_WIDTH, MAIN_MENU_HEIGHT))
     running = True
     while running:
-        screen.fill((0, 0, 0))  # Black background
-        window_width, window_height = screen.get_size()
-        new_width, new_height = maintain_aspect_ratio(window_width, window_height, image_width, image_height)
-        scaled_background = pygame.transform.scale(background_image, (new_width, new_height))
-        screen.blit(scaled_background, (0, 0))
+        screen.blit(background_main, (0, 0))
 
-        # Event Handling
+        # Event handling for button clicks
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 pygame.quit()
                 sys.exit()
-            if event.type == pygame.MOUSEBUTTONDOWN:
-                # Simulating a Play Button click to go to the Play Mode screen
-                if event.button == 1:
+            elif event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:  # Check for left mouse button only
+                mouse_pos = event.pos
+                if play_button_rect.collidepoint(mouse_pos):
                     play_mode_screen()
+                elif rules_button_rect.collidepoint(mouse_pos):
+                    run_rules(main_menu_screen)  # Pass main_menu_screen as a callback to return to the main menu
 
         pygame.display.flip()
 
-# Function to draw buttons on play mode screen
-def draw_buttons():
-    pygame.draw.rect(screen, DEFAULT_COLOR, play_ai_button_rect, 2)
-    pygame.draw.rect(screen, DEFAULT_COLOR, play_player_button_rect, 2)
-
-    # Render text
-    ai_text = font.render("Play Against AI", True, TEXT_COLOR)
-    player_text = font.render("Play Against Player", True, TEXT_COLOR)
-
-    # Blit text to screen
-    screen.blit(ai_text, (play_ai_button_rect.x + (button_width - ai_text.get_width()) // 2, play_ai_button_rect.y + (button_height - ai_text.get_height()) // 2))
-    screen.blit(player_text, (play_player_button_rect.x + (button_width - player_text.get_width()) // 2, play_player_button_rect.y + (button_height - player_text.get_height()) // 2))
-
 # Play Mode Screen Loop
 def play_mode_screen():
+    global screen
+    screen = pygame.display.set_mode((PLAY_AGAINST_WIDTH, PLAY_AGAINST_HEIGHT))
     running = True
     while running:
-        screen.fill(RED_THEME_COLOR)  # Fill with red theme color
-        mouse_pos = pygame.mouse.get_pos()
+        screen.blit(background_play_against, (0, 0))
 
-        # Button hover effect
-        if play_ai_button_rect.collidepoint(mouse_pos):
-            pygame.draw.rect(screen, HOVER_COLOR, play_ai_button_rect, 2)
-        else:
-            pygame.draw.rect(screen, DEFAULT_COLOR, play_ai_button_rect, 2)
-
-        if play_player_button_rect.collidepoint(mouse_pos):
-            pygame.draw.rect(screen, HOVER_COLOR, play_player_button_rect, 2)
-        else:
-            pygame.draw.rect(screen, DEFAULT_COLOR, play_player_button_rect, 2)
-
-        draw_buttons()
-
+        # Event handling for button clicks
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 pygame.quit()
                 sys.exit()
-
-            if event.type == pygame.MOUSEBUTTONDOWN:
-                # Check if buttons are clicked
+            elif event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:  # Check for left mouse button only
+                mouse_pos = event.pos
                 if play_ai_button_rect.collidepoint(mouse_pos):
-                    print("Play against AI clicked!")
-                    run_chessboard(ai=True)  # Start chessboard with AI opponent
-                    running = False
-
+                    run_chessboard(ai=True, back_callback=main_menu_screen)  # Go back to loading screen
                 elif play_player_button_rect.collidepoint(mouse_pos):
-                    print("Play against Player clicked!")
-                    run_chessboard(ai=False)  # Start chessboard without AI
-                    running = False
+                    run_chessboard(ai=False, back_callback=main_menu_screen)  # Go back to loading screen
+                elif back_button_rect_play_against.collidepoint(mouse_pos):
+                    main_menu_screen()  # Go back to the loading screen (main menu)
 
         pygame.display.flip()
 
